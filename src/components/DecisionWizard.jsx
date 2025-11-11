@@ -1,26 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
-
-const DECISION_TYPES = ["investment", "operational", "strategic", "hr"];
-const URGENCY_LEVELS = ["low", "medium", "high"];
-const COMMON_CONSTRAINTS = [
-	"budget_limit",
-	"time_sensitive",
-	"regulatory_requirements",
-	"technical_feasibility",
-	"resource_availability",
-	"stakeholder_approval",
-];
-const COMMON_DEPARTMENTS = [
-	"Finance",
-	"HR",
-	"Operations",
-	"Marketing",
-	"Sales",
-	"IT",
-	"Legal",
-	"Executive",
-];
+import DecisionTypeStep from './DecisionTypeStep';
+import TitleStep from './TitleStep';
+import DescriptionStep from './DescriptionStep';
+import OptionsStep from './OptionsStep';
+import ConstraintsStep from './ConstraintsStep';
+import StakeholdersStep from './StakeholdersStep';
+import UrgencyStep from './UrgencyStep';
+import Summary from './Summary';
 
 const generateId = (prefix) =>
 	`${prefix}-${Math.random().toString(36).substr(2, 9)}`;
@@ -173,7 +160,14 @@ export default function DecisionWizard() {
 			try {
 				await axios.post(
 					"https://samueleke.app.n8n.cloud/webhook-test/decision-analysis",
-					formattedValues
+					formattedValues,
+					{
+						headers: {
+							'Content-Type': 'application/json',
+							"Accept": "*",
+							"strategic-agent":"samuelagentai",
+						},
+					}
 				);
 				console.log("Decision submitted:", formattedValues);
 				setSubmitted(true);
@@ -190,61 +184,7 @@ export default function DecisionWizard() {
 	};
 
 	if (submitted)
-		return (
-			<div className="max-w-xl mx-auto mt-12">
-				<div className="bg-white shadow-lg rounded-lg p-6">
-					<h2 className="text-2xl font-semibold mb-3">All set ✅</h2>
-					<p className="text-gray-700 mb-4">
-						Your decision details were saved locally (check console).
-					</p>
-					<div className="text-sm text-gray-600 space-y-4">
-						<div>
-							<div className="font-medium">Type</div>
-							<div className="mb-2 capitalize">{values.decision_type}</div>
-						</div>
-						<div>
-							<div className="font-medium">Title</div>
-							<div className="mb-2">{values.title}</div>
-						</div>
-						<div>
-							<div className="font-medium">Description</div>
-							<div className="mb-2 whitespace-pre-wrap">
-								{values.description}
-							</div>
-						</div>
-						<div>
-							<div className="font-medium">
-								Options ({values.options.length})
-							</div>
-							{values.options.map((opt) => (
-								<div
-									key={opt.id}
-									className="mb-2 pl-4 border-l-2 border-gray-200">
-									<div className="font-medium">{opt.name}</div>
-									<div className="text-xs text-gray-500">
-										Cost: ${opt.estimated_cost} | Benefit: $
-										{opt.estimated_benefit} | Timeline: {opt.timeline}
-									</div>
-									<div className="text-sm">{opt.description}</div>
-								</div>
-							))}
-						</div>
-						<div>
-							<div className="font-medium">Constraints</div>
-							<div className="mb-2">{values.constraints.join(", ")}</div>
-						</div>
-						<div>
-							<div className="font-medium">Stakeholders</div>
-							<div className="mb-2">{values.stakeholders.join(", ")}</div>
-						</div>
-						<div>
-							<div className="font-medium">Urgency</div>
-							<div className="capitalize">{values.urgency}</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		);
+		return <Summary values={values} />;
 
 	return (
 		<form
@@ -259,276 +199,31 @@ export default function DecisionWizard() {
 				{/* Card content - one question per card */}
 				<div className="min-h-40">
 					{step === 0 && (
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">
-								What kind of decision do you want to make?
-							</label>
-							<div className="space-y-2">
-								{DECISION_TYPES.map((t) => (
-									<label
-										key={t}
-										className="flex items-center space-x-3">
-										<input
-											type="radio"
-											name="decisionType"
-											value={t}
-											checked={values.decision_type === t}
-											onChange={handleChange("decision_type")}
-											className="h-4 w-4 text-indigo-600 border-gray-300"
-										/>
-										<span className="capitalize">{t}</span>
-									</label>
-								))}
-							</div>
-							{errors.decision_type && (
-								<p className="text-red-500 text-sm mt-2">
-									{errors.decision_type}
-								</p>
-							)}
-						</div>
+						<DecisionTypeStep values={values} onChange={handleChange} error={errors.decision_type} />
 					)}
 
 					{step === 1 && (
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">
-								Give it a title
-							</label>
-							<input
-								type="text"
-								value={values.title}
-								onChange={handleChange("title")}
-								placeholder="e.g., Q4 Infrastructure Investment Decision"
-								className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-							/>
-							{errors.title && (
-								<p className="text-red-500 text-sm mt-2">{errors.title}</p>
-							)}
-						</div>
+						<TitleStep values={values} onChange={handleChange} error={errors.title} />
 					)}
 
 					{step === 2 && (
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">
-								Describe in detail the context of what you want to do
-							</label>
-							<textarea
-								value={values.description}
-								onChange={handleChange("description")}
-								rows={6}
-								placeholder="Explain the background, goals, and current situation..."
-								className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-							/>
-							{errors.description && (
-								<p className="text-red-500 text-sm mt-2">
-									{errors.description}
-								</p>
-							)}
-						</div>
+						<DescriptionStep values={values} onChange={handleChange} error={errors.description} />
 					)}
 
 					{step === 3 && (
-						<div>
-							<div className="flex justify-between items-center mb-4">
-								<label className="block text-sm font-medium text-gray-700">
-									Define your options
-								</label>
-								<button
-									type="button"
-									onClick={addOption}
-									className="px-3 py-1 text-sm bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100">
-									+ Add Option
-								</button>
-							</div>
-							<div className="space-y-6">
-								{values.options.map((opt, idx) => (
-									<div
-										key={opt.id}
-										className="p-4 border rounded-lg bg-gray-50">
-										<div className="flex justify-between mb-2">
-											<span className="text-sm font-medium">
-												Option {idx + 1}
-											</span>
-											{values.options.length > 1 && (
-												<button
-													type="button"
-													onClick={() => removeOption(idx)}
-													className="text-red-500 hover:text-red-700 text-sm">
-													Remove
-												</button>
-											)}
-										</div>
-										<div className="space-y-3">
-											<div>
-												<input
-													type="text"
-													value={opt.name}
-													onChange={handleOptionChange(idx, "name")}
-													placeholder="Option name"
-													className="block w-full text-sm rounded-md border-gray-300"
-												/>
-												{errors[`option_${idx}_name`] && (
-													<p className="text-red-500 text-xs mt-1">
-														{errors[`option_${idx}_name`]}
-													</p>
-												)}
-											</div>
-											<div>
-												<textarea
-													value={opt.description}
-													onChange={handleOptionChange(idx, "description")}
-													placeholder="What this option entails..."
-													rows={2}
-													className="block w-full text-sm rounded-md border-gray-300"
-												/>
-												{errors[`option_${idx}_description`] && (
-													<p className="text-red-500 text-xs mt-1">
-														{errors[`option_${idx}_description`]}
-													</p>
-												)}
-											</div>
-											<div className="grid grid-cols-3 gap-3">
-												<div>
-													<input
-														type="number"
-														value={opt.estimated_cost}
-														onChange={handleOptionChange(idx, "estimated_cost")}
-														placeholder="Est. cost"
-														className="block w-full text-sm rounded-md border-gray-300"
-													/>
-													{errors[`option_${idx}_cost`] && (
-														<p className="text-red-500 text-xs mt-1">
-															{errors[`option_${idx}_cost`]}
-														</p>
-													)}
-												</div>
-												<div>
-													<input
-														type="number"
-														value={opt.estimated_benefit}
-														onChange={handleOptionChange(
-															idx,
-															"estimated_benefit"
-														)}
-														placeholder="Est. benefit"
-														className="block w-full text-sm rounded-md border-gray-300"
-													/>
-													{errors[`option_${idx}_benefit`] && (
-														<p className="text-red-500 text-xs mt-1">
-															{errors[`option_${idx}_benefit`]}
-														</p>
-													)}
-												</div>
-												<div>
-													<input
-														type="text"
-														value={opt.timeline}
-														onChange={handleOptionChange(idx, "timeline")}
-														placeholder="Timeline"
-														className="block w-full text-sm rounded-md border-gray-300"
-													/>
-													{errors[`option_${idx}_timeline`] && (
-														<p className="text-red-500 text-xs mt-1">
-															{errors[`option_${idx}_timeline`]}
-														</p>
-													)}
-												</div>
-											</div>
-										</div>
-									</div>
-								))}
-							</div>
-							{errors.options && (
-								<p className="text-red-500 text-sm mt-2">{errors.options}</p>
-							)}
-						</div>
+						<OptionsStep values={values} addOption={addOption} removeOption={removeOption} onChangeOption={handleOptionChange} errors={errors} />
 					)}
 
 					{step === 4 && (
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">
-								Select applicable constraints
-							</label>
-							<div className="space-y-2">
-								{COMMON_CONSTRAINTS.map((constraint) => (
-									<label
-										key={constraint}
-										className="flex items-center space-x-3">
-										<input
-											type="checkbox"
-											checked={values.constraints.includes(constraint)}
-											onChange={() =>
-												handleArrayChange("constraints")(constraint)
-											}
-											className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-										/>
-										<span className="capitalize">
-											{constraint.replace(/_/g, " ")}
-										</span>
-									</label>
-								))}
-							</div>
-							{errors.constraints && (
-								<p className="text-red-500 text-sm mt-2">
-									{errors.constraints}
-								</p>
-							)}
-						</div>
+						<ConstraintsStep values={values} onToggle={handleArrayChange} error={errors.constraints} />
 					)}
 
 					{step === 5 && (
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">
-								Select stakeholder departments
-							</label>
-							<div className="space-y-2">
-								{COMMON_DEPARTMENTS.map((dept) => (
-									<label
-										key={dept}
-										className="flex items-center space-x-3">
-										<input
-											type="checkbox"
-											checked={values.stakeholders.includes(dept)}
-											onChange={() => handleArrayChange("stakeholders")(dept)}
-											className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-										/>
-										<span>{dept}</span>
-									</label>
-								))}
-							</div>
-							{errors.stakeholders && (
-								<p className="text-red-500 text-sm mt-2">
-									{errors.stakeholders}
-								</p>
-							)}
-						</div>
+						<StakeholdersStep values={values} onToggle={handleArrayChange} error={errors.stakeholders} />
 					)}
 
 					{step === 6 && (
-						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-2">
-								How urgent is this decision?
-							</label>
-							<div className="space-y-2">
-								{URGENCY_LEVELS.map((level) => (
-									<label
-										key={level}
-										className="flex items-center space-x-3">
-										<input
-											type="radio"
-											name="urgency"
-											value={level}
-											checked={values.urgency === level}
-											onChange={handleChange("urgency")}
-											className="h-4 w-4 text-indigo-600 border-gray-300"
-										/>
-										<span className="capitalize">{level}</span>
-									</label>
-								))}
-							</div>
-							{errors.urgency && (
-								<p className="text-red-500 text-sm mt-2">{errors.urgency}</p>
-							)}
-						</div>
+						<UrgencyStep values={values} onChange={handleChange} error={errors.urgency} />
 					)}
 				</div>
 
